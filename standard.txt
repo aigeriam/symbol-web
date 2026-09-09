@@ -1,0 +1,1 @@
+ # TODO Asel: verify or add the standard banner font data.
