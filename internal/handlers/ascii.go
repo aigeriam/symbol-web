@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"symbol-web/internal/ascii"
@@ -11,11 +13,18 @@ type AsciiHandler struct {
 	Generator *ascii.Generator
 	Templates *template.Template
 }
+type PageData struct {
+	Banners        []string
+	SelectedBanner string
+	Text           string
+	Result         string
+	ErrorMessage   string
+}
 
 func NewAsciiHandler(generator *ascii.Generator, tmpl *template.Template) *AsciiHandler {
 	return &AsciiHandler{
-		generator: generator,
-		tmpl:      tmpl,
+		Generator: generator,
+		Templates: tmpl,
 	}
 }
 
@@ -42,17 +51,21 @@ func (h *AsciiHandler) GenerateArt(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
+
 	if err := r.ParseForm(); err != nil {
 		h.renderError(w, http.StatusBadRequest, "Could not parse form data")
 		return
 	}
+
 	text := r.FormValue("text")
 	banner := r.FormValue("banner")
+
 	data := PageData{
 		Banners:        ascii.ValidBanners,
 		SelectedBanner: banner,
 		Text:           text,
 	}
+
 	if strings.TrimSpace(text) == "" {
 		data.ErrorMessage = "Text input must not be empty."
 		h.render(w, http.StatusBadRequest, "index.html", data)
@@ -72,13 +85,45 @@ func (h *AsciiHandler) GenerateArt(w http.ResponseWriter, r *http.Request) {
 		h.render(w, http.StatusBadRequest, "index.html", data)
 		return
 	}
+
 	result, err := h.Generator.Render(text, banner)
 	if err != nil {
-		data.ErrorMessage = "Error generating ASCII art: " + err.Error()
+		log.Printf("ascii render error: %v", err)
+		if errors.Is(err, ascii.ErrEmptyText) || errors.Is(err, ascii.ErrInvalidBanner) {
+			data.ErrorMessage = err.Error()
+			h.render(w, http.StatusBadRequest, "index.html", data)
+			return
+		}
+		data.ErrorMessage = "Something went wrong generating your ASCII art. Please try again."
 		h.render(w, http.StatusInternalServerError, "index.html", data)
 		return
 	}
-	data.Result = result
 
-	h.render(w, http.StatusOk, "index.html", data)
+	data.Result = result
+	h.render(w, http.StatusOK, "index.html", data)
+}
+func (h *AsciiHandler) render(w http.ResponseWriter, status int, name string, data any) {
+	if h.Templates.Lookup(name) == nil {
+		h.renderError(w, http.StatusNotFound, "Template not found: "+name)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	if err := h.Templates.ExecuteTemplate(w, name, data); err != nil {
+		log.Printf("template execution error for %q: %v", name, err)
+		// Headers are already sent at this point in many cases; best effort.
+		http.Error(w, "Internal server error rendering page", http.StatusInternalServerError)
+	}
+}
+func (h *AsciiHandler) renderError(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	if h.Templates.Lookup("error.html") == nil {
+		http.Error(w, message, status)
+		return
+	}
+	_ = h.Templates.ExecuteTemplate(w, "error.html", map[string]any{
+		"StatusCode": status,
+		"Message":    message,
+	})
 }
