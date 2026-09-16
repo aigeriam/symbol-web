@@ -1,23 +1,29 @@
 package ascii
+
+import "sync"
+
 const (
-	BannerShadow="shadow"
-	BannerStandard="standard"
-	BannerThinkertoy="thinkertoy"
+	BannerShadow     = "shadow"
+	BannerStandard   = "standard"
+	BannerThinkertoy = "thinkertoy"
 )
-type Generator struct{
+
+type Generator struct {
 	mu    sync.RWMutex
-	dir   string 
+	dir   string
 	fonts map[string]*font
 }
-type font struct{
-	height int 
+type font struct {
+	height int
 	glyphs map[rune][]string
 }
-var ValidBanners = []string{BannerStandard, BannerShadow, BannerThinkertoy}	
-//to say we are at the current working directory
+
+var ValidBanners = []string{BannerStandard, BannerShadow, BannerThinkertoy}
+
+// to say we are at the current working directory
 func Newgenerator(dir string) *Generator {
 	return &Generator{
-		dir: dir,
+		dir:   dir,
 		fonts: make(map[string]*font),
 	}
 }

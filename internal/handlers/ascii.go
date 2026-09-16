@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
+	"symbol-web/internal/ascii"
 	"text/template"
 )
 
@@ -51,4 +53,32 @@ func (h *AsciiHandler) GenerateArt(w http.ResponseWriter, r *http.Request) {
 		SelectedBanner: banner,
 		Text:           text,
 	}
+	if strings.TrimSpace(text) == "" {
+		data.ErrorMessage = "Text input must not be empty."
+		h.render(w, http.StatusBadRequest, "index.html", data)
+		return
+	}
+	if len(text) > 1000 {
+		data.ErrorMessage = "Text input is too long (maximum 1000 characters)."
+		h.render(w, http.StatusBadRequest, "index.html", data)
+		return
+	}
+	if banner == "" {
+		banner = ascii.BannerStandard
+		data.SelectedBanner = banner
+	}
+	if !ascii.IsValidBanner(banner) {
+		data.ErrorMessage = "Invalid banner selection: " + banner
+		h.render(w, http.StatusBadRequest, "index.html", data)
+		return
+	}
+	result, err := h.Generator.Render(text, banner)
+	if err != nil {
+		data.ErrorMessage = "Error generating ASCII art: " + err.Error()
+		h.render(w, http.StatusInternalServerError, "index.html", data)
+		return
+	}
+	data.Result = result
+
+	h.render(w, http.StatusOk, "index.html", data)
 }
