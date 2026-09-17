@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Symbol Web - ASCII Art Generator</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <div class="container">
+      <header class="topbar">
+        <div class="brand-wrap">
+          <span class="brand-mark">✦</span>
+          <h1>Symbol Web</h1>
+        </div>
+        <p class="subtitle">Turn text into ASCII art, with a little AI help.</p>
+      </header>
+
+      {{if .ErrorMessage}}
+      <div class="alert alert-error">{{.ErrorMessage}}</div>
+      {{end}}
+
+      <div class="studio-shell">
+        <section class="generator-panel">
+          <form id="art-form" action="/symbol-art" method="POST">
+            <div class="field">
+              <label for="text-input">Text</label>
+              <input
+                type="text"
+                id="text-input"
+                name="text"
+                placeholder="Type your text..."
+                value="{{.Text}}"
+                autocomplete="off"
+                required
+              />
+              <div id="suggestions-dropdown" class="suggestions hidden"></div>
+            </div>
+
+            <div class="field banner-field">
+              <label>Banner</label>
+              <div class="banner-options">
+                {{range .Banners}}
+                <label class="banner-radio">
+                  <input
+                    type="radio"
+                    name="banner"
+                    value="{{.}}"
+                    {{if eq . $.SelectedBanner}}checked{{end}}
+                  />
+                  <span>{{.}}</span>
+                </label>
+                {{end}}
+              </div>
+              <button type="button" id="ai-recommend-btn" class="btn-ai">
+                AI Recommend Banner
+              </button>
+              <div id="recommendation-result" class="recommendation hidden"></div>
+            </div>
+
+            <div class="field utility-row">
+              <button type="button" id="get-variations-btn" class="btn-secondary">
+                Get Creative Ideas
+              </button>
+            </div>
+
+            <div class="field action-row">
+              <button type="submit" class="btn-primary">Generate ASCII Art</button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="result-panel">
+          <div class="result-card">
+            {{if .Result}}
+            <section class="result">
+              <h2>Result</h2>
+              <pre class="ascii-output">{{.Result}}</pre>
+            </section>
+            {{else}}
+            <div class="placeholder-result">
+              <div class="orb"></div>
+              <p>Your ASCII output will appear here.</p>
+            </div>
+            {{end}}
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- Creative variations modal -->
+  <div id="variations-modal" class="modal hidden">
+    <div class="modal-content">
+      <button type="button" id="close-variations" class="modal-close">&times;</button>
+      <h2>💡 Creative Ideas</h2>
+      <div id="variations-list"></div>
+    </div>
+  </div>
+
+  <script src="/static/js/suggestions.js"></script>
+  <script src="/static/js/recommendations.js"></script>
+  <script src="/static/js/variations.js"></script>
+</body>
+</html>

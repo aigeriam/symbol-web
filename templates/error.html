@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Symbol Web - Error {{.StatusCode}}</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⚠️ Error {{.StatusCode}}</h1>
+    </header>
+    <div class="alert alert-error">{{.Message}}</div>
+    <a class="btn-secondary" href="/">&larr; Back to generator</a>
+  </div>
+</body>
+</html>
